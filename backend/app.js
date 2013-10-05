@@ -7,50 +7,9 @@ var express = require("express"),
 var jquery = fs.readFileSync(__dirname + "/jquery-1.10.2.min.js", "utf-8");
 //var jquery_xpath = fs.readFileSync(__dirname + "/jquery.xpath.min.js", "utf-8");
 
-app.configure(function() {
-  app.set("name", "jDOM");
-});
+var dbObject;
 
-// Request Logger
-app.use( function (req, res, next) {
-  console.log("%s %s", req.method, req.url);
-  next();
-});
-
-// Static files
-app.use(express.static(__dirname + '/public'));
-
-// Body Parser (JSON & Multi-part)
-app.use(express.bodyParser());
-
-// Routes
-app.post("/apify", function (req, res) {
-  res.send(200);
-});
-
-app.get("/get/:hash", function (req, res) {
-  res.send(200);
-});
-
-app.post("/test", function (req, res) {
-
-  var payload = req.body;
-
-  if(!payload) {
-    res.send(400, "No payload received");
-    return;
-  }
-
-  if(!payload.url) {
-    res.send(400, "No url on payload");
-    return;
-  }
-
-  if(!payload.xpath) {
-    res.send(400, "No xpath on payload");
-    return;
-  }
-
+function magic(payload, res) {
   var xpath = payload.xpath.replace(/\/tbody/g, "");
   console.log(xpath);
 
@@ -135,6 +94,77 @@ app.post("/test", function (req, res) {
       res.send({"result": result, "length": result.length});
     }
   });
+}
+
+app.configure(function() {
+  app.set("name", "jDOM");
+});
+
+// Request Logger
+app.use( function (req, res, next) {
+  console.log("%s %s", req.method, req.url);
+  next();
+});
+
+// Static files
+app.use(express.static(__dirname + '/public'));
+
+// Body Parser (JSON & Multi-part)
+app.use(express.bodyParser());
+
+app.use(function (req, res, next) {
+  if(dbObject) {
+    req.db = dbObject;
+  }
+});
+
+// Routes
+app.post("/apify", function (req, res, next) {
+  var payload = req.body;
+
+  if(!payload) {
+    res.send(400, "No payload received");
+    return;
+  }
+
+  if(!payload.url) {
+    res.send(400, "No url on payload");
+    return;
+  }
+
+  if(!payload.xpath) {
+    res.send(400, "No xpath on payload");
+    return;
+  }
+
+  var collection = req.db.collection('apis');
+  collection.insert(payload, function (err, api) {
+    if(err) {
+      next(err);
+      return;
+    }
+
+    var locationUrl = url.format({
+      "protocol": "http",
+      "hostname": req.host,
+      "port": 8080,
+      "pathname": "/get/" + api._id
+    });
+
+    res.set({"Location": locationUrl});
+    res.send(201, {"url": locationUrl});
+  });
+});
+
+app.get("/get/:hashid", function (req, res, next) {
+  var collection = req.db.collection('apis');
+  collection.findOne({"_id": req.params.hashid}, function (err, api) {
+    magic(api, res);
+  });
+});
+
+app.post("/test", function (req, res) {
+  magic(req.body, res);
 });
 
 // Error Handler
@@ -152,6 +182,8 @@ dbClient.connect("mongodb://localhost", function (err, db) {
   if(err) {
     return console.error("Could not connect to mongodb", err);
   }
+
+  dbObject = db;
 
   console.log("Database connection successful");
 
