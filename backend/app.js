@@ -115,6 +115,7 @@ app.use(express.bodyParser());
 app.use(function (req, res, next) {
   if(dbObject) {
     req.db = dbObject;
+    next();
   }
 });
 
