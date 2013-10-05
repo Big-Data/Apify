@@ -2,12 +2,12 @@ var express = require("express"),
     app = express(),
     fs = require("fs"),
     jsdom = require("jsdom"),
-    dbClient = require("mongodb");
+    url = require("url"),
+    dbClient = require("mongodb"),
+    ObjectID = dbClient.ObjectID;
 
 var jquery = fs.readFileSync(__dirname + "/jquery-1.10.2.min.js", "utf-8");
 //var jquery_xpath = fs.readFileSync(__dirname + "/jquery.xpath.min.js", "utf-8");
-
-var dbObject;
 
 function magic(payload, res) {
   var xpath = payload.xpath.replace(/\/tbody/g, "");
@@ -112,11 +112,10 @@ app.use(express.static(__dirname + '/public'));
 // Body Parser (JSON & Multi-part)
 app.use(express.bodyParser());
 
+var _db;
 app.use(function (req, res, next) {
-  if(dbObject) {
-    req.db = dbObject;
-    next();
-  }
+  req.db = _db;
+  next();
 });
 
 // Routes
@@ -138,12 +137,15 @@ app.post("/apify", function (req, res, next) {
     return;
   }
 
-  var collection = req.db.collection('apis');
+  var collection = req.db.collection("apis");
   collection.insert(payload, function (err, api) {
     if(err) {
       next(err);
       return;
     }
+
+    api = api[0];
+    console.log(api);
 
     var locationUrl = url.format({
       "protocol": "http",
@@ -158,8 +160,13 @@ app.post("/apify", function (req, res, next) {
 });
 
 app.get("/get/:hashid", function (req, res, next) {
-  var collection = req.db.collection('apis');
-  collection.findOne({"_id": req.params.hashid}, function (err, api) {
+  var collection = req.db.collection("apis");
+  collection.findOne({"_id": new ObjectID(req.params.hashid)}, function (err, api) {
+    if(!api) {
+      res.send(404);
+      return;
+    }
+
     magic(api, res);
   });
 });
@@ -179,12 +186,12 @@ app.use(function (req, res, next){
   res.send(404, '404 - What your looking for is in "El Gara"');
 });
 
-dbClient.connect("mongodb://localhost", function (err, db) {
+dbClient.connect("mongodb://localhost/test", function (err, db) {
   if(err) {
     return console.error("Could not connect to mongodb", err);
   }
 
-  dbObject = db;
+  _db = db;
 
   console.log("Database connection successful");
 
