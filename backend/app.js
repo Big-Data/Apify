@@ -88,6 +88,7 @@ function magic(payload, res) {
 
           if(getHref) {
             r.href = node.href;
+            r.src = node.src;
           }
 
           result.push(r);
