@@ -1,5 +1,5 @@
 chrome.contextMenus.create({
-  "title":"Preview DOM data",
+  "title":"Apify it!",
   "contexts":["all"],
   "onclick": sendPayload
 });
