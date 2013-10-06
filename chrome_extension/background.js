@@ -19,7 +19,7 @@ function sendPayload(info, tab) {
             window.open(res.url)
           }
         };
-        post.open("POST", "http://localhost:8080/apify", true);
+        post.open("POST", "http://ec2-54-211-79-18.compute-1.amazonaws.com:8080/apify", true);
         post.setRequestHeader("Content-Type", "application/json");
         post.send(JSON.stringify(response));
       }
