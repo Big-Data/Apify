@@ -13,8 +13,10 @@ function sendPayload(info, tab) {
         post.onreadystatechange = function() {
           console.log(post);
           if (post.readyState === 4){
-            console.log('caca');
-            console.log(JSON.parse(post.responseText));
+            var res = JSON.parse(post.responseText);
+            console.log(res);
+
+            window.open(res.url)
           }
         };
         post.open("POST", "http://localhost:8080/apify", true);

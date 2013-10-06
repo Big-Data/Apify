@@ -10,7 +10,10 @@ var jquery = fs.readFileSync(__dirname + "/jquery-1.10.2.min.js", "utf-8");
 //var jquery_xpath = fs.readFileSync(__dirname + "/jquery.xpath.min.js", "utf-8");
 
 function magic(payload, res) {
-  var xpath = payload.xpath.replace(/\/tbody/g, "");
+  var xpath = payload.xpath;
+  xpath = xpath.replace(/\/tbody/g, "");
+  xpath = xpath.replace(/\/tr\//g, "/tr[1]/");
+  xpath = xpath.replace(/\/li\//g, "/li[1]/");
   console.log(xpath);
 
   jsdom.env({ url: payload.url, src: [jquery],
@@ -34,7 +37,7 @@ function magic(payload, res) {
 
       if(parentListElement.length === 0) {
         console.log("Could not find parent table, ul or ol");
-        res.send({"result": textContent, "length": 1});
+        res.send({"result": lastElement.textContent, "length": 1});
         return;
       }
 
