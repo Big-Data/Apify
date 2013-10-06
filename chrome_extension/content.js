@@ -1,13 +1,15 @@
 var element = null;
 
-document.addEventListener('mousedown', function(event) {
+document.addEventListener('mousedown', function (event) {
   element = event.target;
   console.log(element);
 });
 
-chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   if (request.method == 'getElement') {
-    sendResponse({xPath: getElementXPath(element), url: document.URL});
+    var xpath = getElementXPath(element);
+    console.log("Got xpath: " + xpath);
+    sendResponse({"xpath": xpath, "url": document.URL});
   }
 });
 
